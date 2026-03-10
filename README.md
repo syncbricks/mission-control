@@ -29,3 +29,17 @@ Open [http://localhost:3000](http://localhost:3000).
 - **No credentials are stored in this repo.**
 - The Settings page reads from `~/.openclaw/openclaw.json` at runtime and redacts secrets.
 - Keep the repo public safely; all secrets stay on the host.
+
+## Database
+
+Create a `.env` file (not committed) with your Postgres connection string:
+
+```bash
+DATABASE_URL=postgresql://postgres:laserking@10.11.12.40:2050/mission_control?schema=public
+```
+
+Run migrations:
+
+```bash
+npx prisma migrate dev --name init
+```
