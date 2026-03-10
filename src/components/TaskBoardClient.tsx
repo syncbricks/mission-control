@@ -20,6 +20,7 @@ type Task = {
 export default function TaskBoardClient() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [agents, setAgents] = useState<Agent[]>([]);
+  const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({
     title: "",
     description: "",
@@ -69,6 +70,7 @@ export default function TaskBoardClient() {
       }),
     });
     setForm({ title: "", description: "", assigneeId: "", requiresApproval: false });
+    setShowForm(false);
     loadTasks();
     loadActivity();
   };
@@ -104,50 +106,70 @@ export default function TaskBoardClient() {
       <section className="rounded-2xl border border-card-border bg-card-bg p-6 shadow-sm">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-lg font-semibold text-foreground">Kanban Overview</h2>
-          <button
-            onClick={createTask}
-            className="rounded-lg bg-zinc-900 px-3 py-2 text-sm text-white"
-          >
-            New Task
-          </button>
+          <div className="flex items-center gap-2">
+            {showForm && (
+              <button
+                onClick={() => {
+                  setShowForm(false);
+                  setForm({
+                    title: "",
+                    description: "",
+                    assigneeId: "",
+                    requiresApproval: false,
+                  });
+                }}
+                className="rounded-lg border border-zinc-200 px-3 py-2 text-sm text-zinc-600"
+              >
+                Cancel
+              </button>
+            )}
+            <button
+              onClick={() => (showForm ? createTask() : setShowForm(true))}
+              className="rounded-lg bg-zinc-900 px-3 py-2 text-sm text-white"
+            >
+              {showForm ? "Create Task" : "New Task"}
+            </button>
+          </div>
         </div>
 
-        <div className="mb-6 grid gap-3 rounded-xl border border-dashed border-zinc-200 bg-white/70 p-4">
-          <input
-            value={form.title}
-            onChange={(e) => setForm({ ...form, title: e.target.value })}
-            placeholder="Task title"
-            className="rounded-lg border border-zinc-200 px-3 py-2 text-sm"
-          />
-          <textarea
-            value={form.description}
-            onChange={(e) => setForm({ ...form, description: e.target.value })}
-            placeholder="Description"
-            className="rounded-lg border border-zinc-200 px-3 py-2 text-sm"
-          />
-          <select
-            value={form.assigneeId}
-            onChange={(e) => setForm({ ...form, assigneeId: e.target.value })}
-            className="rounded-lg border border-zinc-200 px-3 py-2 text-sm"
-          >
-            <option value="">Assign to agent...</option>
-            {agents.map((agent) => (
-              <option key={agent.id} value={agent.id}>
-                {agent.name ?? agent.id}
-              </option>
-            ))}
-          </select>
-          <label className="flex items-center gap-2 text-xs text-zinc-600">
+        {showForm && (
+          <div className="mb-6 grid gap-3 rounded-xl border border-dashed border-zinc-200 bg-white/70 p-4">
             <input
-              type="checkbox"
-              checked={form.requiresApproval}
-              onChange={(e) =>
-                setForm({ ...form, requiresApproval: e.target.checked })
-              }
+              value={form.title}
+              onChange={(e) => setForm({ ...form, title: e.target.value })}
+              placeholder="Task title"
+              className="rounded-lg border border-zinc-200 px-3 py-2 text-sm"
             />
-            Require approval before dispatch
-          </label>
-        </div>
+            <textarea
+              value={form.description}
+              onChange={(e) => setForm({ ...form, description: e.target.value })}
+              placeholder="Description"
+              className="rounded-lg border border-zinc-200 px-3 py-2 text-sm"
+            />
+            <select
+              value={form.assigneeId}
+              onChange={(e) => setForm({ ...form, assigneeId: e.target.value })}
+              className="rounded-lg border border-zinc-200 px-3 py-2 text-sm"
+            >
+              <option value="">Assign to agent...</option>
+              {agents.map((agent) => (
+                <option key={agent.id} value={agent.id}>
+                  {agent.name ?? agent.id}
+                </option>
+              ))}
+            </select>
+            <label className="flex items-center gap-2 text-xs text-zinc-600">
+              <input
+                type="checkbox"
+                checked={form.requiresApproval}
+                onChange={(e) =>
+                  setForm({ ...form, requiresApproval: e.target.checked })
+                }
+              />
+              Require approval before dispatch
+            </label>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
           {columns.map((column) => (
@@ -214,6 +236,11 @@ export default function TaskBoardClient() {
           Latest dispatches and task events.
         </p>
         <div className="mt-4 space-y-3">
+          {activity.length === 0 && (
+            <div className="rounded-lg border border-card-border bg-white px-3 py-2 text-xs text-zinc-400">
+              No activity yet. Dispatch a task to see history here.
+            </div>
+          )}
           {activity.map((item) => (
             <div
               key={item.id}
