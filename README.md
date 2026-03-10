@@ -26,4 +26,6 @@ Open [http://localhost:3000](http://localhost:3000).
 
 ## Notes
 
-This is a front-end scaffold ready for wiring to OpenClaw APIs.
+- **No credentials are stored in this repo.**
+- The Settings page reads from `~/.openclaw/openclaw.json` at runtime and redacts secrets.
+- Keep the repo public safely; all secrets stay on the host.
