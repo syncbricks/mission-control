@@ -9,7 +9,7 @@ export default function PageLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex h-screen w-full">
+    <div className="flex h-screen w-full bg-background">
       <Sidebar />
       <div className="flex flex-1 flex-col">
         <TopBar title={title} />
