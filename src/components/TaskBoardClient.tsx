@@ -13,6 +13,8 @@ type Task = {
   status: (typeof columns)[number];
   assigneeId?: string | null;
   assignee?: string | null;
+  executionStatus?: "IDLE" | "QUEUED" | "RUNNING" | "DONE" | "FAILED";
+  approvalStatus?: "NOT_REQUIRED" | "PENDING" | "APPROVED" | "REJECTED";
 };
 
 export default function TaskBoardClient() {
@@ -22,7 +24,10 @@ export default function TaskBoardClient() {
     title: "",
     description: "",
     assigneeId: "",
+    requiresApproval: false,
   });
+
+  const [activity, setActivity] = useState<any[]>([]);
 
   const loadTasks = async () => {
     const res = await fetch("/api/tasks");
@@ -36,9 +41,16 @@ export default function TaskBoardClient() {
     setAgents(data.agents ?? []);
   };
 
+  const loadActivity = async () => {
+    const res = await fetch("/api/activity");
+    const data = await res.json();
+    setActivity(data.activity ?? []);
+  };
+
   useEffect(() => {
     loadTasks();
     loadAgents();
+    loadActivity();
   }, []);
 
   const createTask = async () => {
@@ -53,10 +65,12 @@ export default function TaskBoardClient() {
         status: "BACKLOG",
         assigneeId: agent?.id ?? null,
         assignee: agent?.name ?? agent?.id ?? null,
+        requiresApproval: form.requiresApproval,
       }),
     });
-    setForm({ title: "", description: "", assigneeId: "" });
+    setForm({ title: "", description: "", assigneeId: "", requiresApproval: false });
     loadTasks();
+    loadActivity();
   };
 
   const updateStatus = async (task: Task, status: Task["status"]) => {
@@ -66,6 +80,16 @@ export default function TaskBoardClient() {
       body: JSON.stringify({ status }),
     });
     loadTasks();
+  };
+
+  const approveTask = async (task: Task) => {
+    await fetch(`/api/tasks/${task.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ approvalStatus: "APPROVED" }),
+    });
+    loadTasks();
+    loadActivity();
   };
 
   const grouped = useMemo(() => {
@@ -113,6 +137,16 @@ export default function TaskBoardClient() {
               </option>
             ))}
           </select>
+          <label className="flex items-center gap-2 text-xs text-zinc-600">
+            <input
+              type="checkbox"
+              checked={form.requiresApproval}
+              onChange={(e) =>
+                setForm({ ...form, requiresApproval: e.target.checked })
+              }
+            />
+            Require approval before dispatch
+          </label>
         </div>
 
         <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
@@ -138,6 +172,22 @@ export default function TaskBoardClient() {
                         {task.description}
                       </p>
                     )}
+                    <div className="mt-2 flex flex-wrap items-center gap-2 text-[10px] text-zinc-500">
+                      <span className="rounded-full bg-zinc-100 px-2 py-0.5">
+                        Exec: {task.executionStatus ?? "IDLE"}
+                      </span>
+                      <span className="rounded-full bg-zinc-100 px-2 py-0.5">
+                        Approval: {task.approvalStatus ?? "NOT_REQUIRED"}
+                      </span>
+                      {task.approvalStatus === "PENDING" && (
+                        <button
+                          onClick={() => approveTask(task)}
+                          className="rounded-md border border-emerald-200 bg-emerald-50 px-2 py-1 text-[10px] text-emerald-700"
+                        >
+                          Approve
+                        </button>
+                      )}
+                    </div>
                     <div className="mt-3 flex flex-wrap gap-2">
                       {columns
                         .filter((status) => status !== task.status)
@@ -159,12 +209,25 @@ export default function TaskBoardClient() {
         </div>
       </section>
       <section className="rounded-2xl border border-card-border bg-card-bg p-6 shadow-sm">
-        <h2 className="text-lg font-semibold text-foreground">How it works</h2>
+        <h2 className="text-lg font-semibold text-foreground">Activity Feed</h2>
         <p className="mt-2 text-sm text-muted">
-          Tasks are stored in PostgreSQL and assigned to agents by ID. You can
-          move tasks through the workflow as agents complete them. Agent status
-          and execution automation will be layered in next.
+          Latest dispatches and task events.
         </p>
+        <div className="mt-4 space-y-3">
+          {activity.map((item) => (
+            <div
+              key={item.id}
+              className="rounded-lg border border-card-border bg-white px-3 py-2 text-xs"
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-zinc-700">{item.message}</span>
+                <span className="text-zinc-400">
+                  {new Date(item.createdAt).toLocaleString()}
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
       </section>
     </div>
   );

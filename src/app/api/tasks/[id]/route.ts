@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { TaskStatus } from "@prisma/client";
+import { ApprovalStatus, ExecutionStatus, TaskStatus } from "@prisma/client";
+import { dispatchTask } from "@/lib/dispatcher";
 
 export async function PATCH(
   request: Request,
@@ -16,8 +17,19 @@ export async function PATCH(
         status: body.status as TaskStatus,
         assigneeId: body.assigneeId,
         assignee: body.assignee,
+        executionStatus: body.executionStatus as ExecutionStatus,
+        approvalStatus: body.approvalStatus as ApprovalStatus,
       },
     });
+
+    if (body.approvalStatus === ApprovalStatus.APPROVED) {
+      await prisma.task.update({
+        where: { id: params.id },
+        data: { executionStatus: ExecutionStatus.QUEUED },
+      });
+      await dispatchTask(params.id);
+    }
+
     return NextResponse.json({ ok: true, task });
   } catch (error) {
     return NextResponse.json(
