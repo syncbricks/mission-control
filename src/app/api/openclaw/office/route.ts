@@ -3,7 +3,7 @@ import { buildOfficeAgents } from "@/lib/office";
 
 export async function GET() {
   try {
-    const agents = buildOfficeAgents();
+    const agents = await buildOfficeAgents();
     return NextResponse.json({ ok: true, agents });
   } catch (error) {
     return NextResponse.json(
