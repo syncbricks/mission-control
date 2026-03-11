@@ -8,16 +8,10 @@ async function fetchOffice() {
   return res.json();
 }
 
-const deskLayout = [
-  ["main", "tavily", null],
-  ["blog-publisher", "dexiq-finance", "n8n-developer"],
-  ["skool", null, null],
-];
-
 export default async function OfficePage() {
   const data = await fetchOffice();
   const agents = data?.agents ?? [];
-  const agentMap: Record<string, { id: string; name: string; status: string }> =
+  const agentMap: Record<string, { id: string; name: string; status: string; currentTask?: string | null; completedCount?: number }> =
     {};
   for (const agent of agents) {
     agentMap[agent.id] = agent;
@@ -53,8 +47,8 @@ export default async function OfficePage() {
         </div>
 
         <div className="mt-6 grid gap-6 md:grid-cols-[2fr_1fr]">
-          <div className="h-[540px] overflow-hidden rounded-2xl border border-slate-700 bg-[#0f172a]">
-            <OfficeCanvas deskLayout={deskLayout} agentMap={agentMap} />
+          <div className="h-[560px]">
+            <OfficeCanvas agentMap={agentMap} />
           </div>
 
           <div className="space-y-4">
